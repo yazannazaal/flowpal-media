@@ -1,0 +1,26 @@
+name: Fetch audio
+on:
+  push:
+    paths: ["tools/audio.txt", ".github/workflows/fetch-audio.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download audio listed in tools/audio.txt
+        run: |
+          mkdir -p media/audio
+          while read -r name url; do
+            [ -z "$name" ] && continue
+            [ -f "media/audio/$name.mp3" ] || curl -fsSL "$url" -o "media/audio/$name.mp3"
+          done < tools/audio.txt
+      - name: Commit audio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
+          git add media/audio
+          git diff --cached --quiet || git commit -m "Add fetched audio"
+          git push
